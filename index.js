@@ -73,6 +73,7 @@ process.on('uncaughtException', (e) => {
   console.error(e);
   server.close(() => {
     console.log('\nSERVER SHUT DOWN FROM UNCAUGHT EXCEPTION');
+    process.exit(0);
   });
 });
 
@@ -81,6 +82,7 @@ process.on('unhandledRejection', (e) => {
   console.error(e);
   server.close(() => {
     console.log('\nSERVER SHUT DOWN FROM UNHANDLED REJECTION');
+    process.exit(0);
   });
 });
 
