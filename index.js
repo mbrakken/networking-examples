@@ -5,7 +5,7 @@ const path = require('path');
 const mimeTypes = require('./utilities/mimeTypes');
 const queryStringToObject = require('./utilities/queryStringToObject');
 const findAnagrams = require('./utilities/findAnagrams');
-const websocketListener = require('./utilities/websocketListener');
+const upgradeListener = require('./utilities/upgradeListener');
 
 const PORT = process.env.PORT || 8765;
 
@@ -66,7 +66,7 @@ server.on('connection', () => {
   console.log('got a connection...');
 });
 
-server.on('upgrade', websocketListener);
+server.on('upgrade', upgradeListener);
 
 process.on('uncaughtException', (e) => {
   console.error('\nuncaughtException, SHUTTING DOWN');
@@ -109,10 +109,6 @@ function handleGET(request, response) {
   switch (requestPath) {
     case '/anagrams/anagrams.csv':
       getAnagrams(query, response);
-      break;
-
-    case '/chat':
-      handleChat(request, response);
       break;
 
     default:
@@ -176,13 +172,6 @@ function getAnagrams(query = '', response) {
     });
     response.end(body, 'utf-8');
   }
-}
-
-function handleChat(request, response) {
-  console.log('GOT CHAT');
-
-  response.writeHead(204);
-  response.end();
 }
 
 function processData(request, response) {
