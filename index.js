@@ -10,6 +10,7 @@ const queryStringToObject = require('./utilities/queryStringToObject');
 const findAnagrams = require('./utilities/findAnagrams');
 
 const PORT = process.env.PORT || 8765;
+const redisURL = process.env.REDISTOGO_URL || "redis://localhost:6379"
 
 const publicPath = path.resolve(__dirname, 'public');
 
@@ -221,8 +222,8 @@ function parseMessage(aMessage) {
 wss.on('connection', function connection(ws) {
   // console.log('Got a connection', ws);
 
-  const publisher = redis.createClient();
-  const subscriber = redis.createClient();
+  const publisher = redis.createClient({ url: redisURL});
+  const subscriber = redis.createClient({ url: redisURL });
   const subcriptions = [];
 
   let yourName;
