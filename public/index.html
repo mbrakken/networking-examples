@@ -6,12 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Networking Demo</title>
     <meta name="description" content="" />
+    <base href="/" />
     <link rel="stylesheet" href="" />
   </head>
   <body>
-    <h1>Browser Networking</h1>
+    <h1>Chat</h1>
 
-    <div id="sandbox"></div>
-    <script type="module" src="main.js"></script>
+    <button id="connectSocket">Connect</button>
+
+    <form id="chatBox">
+      <input type="text" id="entry" />
+      <button id="sendMessage" type='submit'>Send Message!</button>
+    </form>
+
+    <pre id="output"></pre>
+
+    <script type="module" src="chat.js"></script>
   </body>
 </html>

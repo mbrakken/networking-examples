@@ -1,11 +1,13 @@
 const http = require('http');
 const { promises: fs, createReadStream } = require('fs');
 const path = require('path');
+const { WebSocketServer } = require('ws');
+const redis = require('redis');
+// const redisClient = require('./utilities/redisClient');
 
 const mimeTypes = require('./utilities/mimeTypes');
 const queryStringToObject = require('./utilities/queryStringToObject');
 const findAnagrams = require('./utilities/findAnagrams');
-const upgradeListener = require('./utilities/upgradeListener');
 
 const PORT = process.env.PORT || 8765;
 
@@ -66,7 +68,8 @@ server.on('connection', () => {
   console.log('got a connection...');
 });
 
-server.on('upgrade', upgradeListener);
+// https://github.com/websockets/ws
+// server.on('upgrade', upgradeListener);
 
 process.on('uncaughtException', (e) => {
   console.error('\nuncaughtException, SHUTTING DOWN');
@@ -189,3 +192,109 @@ function processData(request, response) {
     response.end();
   });
 }
+
+const wss = new WebSocketServer({ server });
+
+function parseMessage(aMessage) {
+  if (!aMessage) {
+    return {};
+  }
+
+  console.log('Parse incoming message:', aMessage);
+  const stringified = aMessage.toString();
+  console.log('stringified:', stringified);
+
+  if (stringified[0] !== '/') {
+    return {};
+  }
+
+  const [command, ...messageParts] = stringified.split(' ');
+
+  return {
+    command,
+    message: messageParts.join(' '),
+  };
+}
+
+// redisClient
+// https://github.com/NodeRedis/node-redis/tree/v3.1.2
+wss.on('connection', function connection(ws) {
+  // console.log('Got a connection', ws);
+
+  const publisher = redis.createClient();
+  const subscriber = redis.createClient();
+  const subcriptions = [];
+
+  let yourName;
+
+  subscriber.on('subscribe', () => {});
+
+  subscriber.on('message', (channel, publishedMessage) => {
+    // console.log('subscriber got message', channel, publishedMessage);
+
+    try {
+      const { person, message } = JSON.parse(publishedMessage);
+      ws.send(`{{${channel}}} ${person}: ${message}`);
+    } catch (e) {
+      console.error('Failed to parse message', e);
+      ws.send(
+        `{{${channel}}}: Chatbort is sad and could not understand "${publishedMessage}"`
+      );
+    }
+  });
+
+  ws.on('message', function incoming(incomingMessage) {
+    console.log('received: %s', incomingMessage);
+
+    const { command, message } = parseMessage(incomingMessage);
+
+    switch (command) {
+      case '/name':
+        yourName = message;
+
+        subscriber.subscribe('general', () => {
+          ws.send(`Welcome to Chatbort, ${message}`);
+
+          publisher.publish(
+            'general',
+            JSON.stringify({
+              person: 'ChatBort',
+              message: `${message} has joined the chatbort.`,
+            })
+          );
+        });
+        break;
+
+      case '/subscribe':
+        ws.send(`You've subscribed to the ${message} channel`);
+        break;
+
+      case '/create':
+        ws.send(`You've created the "${message}" channel. Tell your friends!`);
+        break;
+
+      case null:
+      case undefined:
+        publisher.publish(
+          'general',
+          JSON.stringify({
+            person: yourName,
+            message: incomingMessage.toString(),
+          })
+        );
+        break;
+
+      default:
+        ws.send(`We did not understand "${command}". Sorry!`);
+        break;
+    }
+  });
+
+  ws.send(`
+  Welcome to to Chatbort!
+  To get started, here are some commands you can send: 
+  /name Chatbort
+  /subscribe Puppytime
+  /create Kittentime
+`);
+});
