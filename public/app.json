@@ -1,0 +1,8 @@
+{
+  "name": "ChatBort3000",
+  "description": "A Chat App for Borts and their 3000 friends.",
+  "repository": "https://github.com/mbrakken//networking-examples",
+  "logo": "https://cdn.rawgit.com/heroku/node-js-getting-started/main/public/node.svg",
+  "keywords": ["node", "heroku"],
+  "image": "heroku/nodejs"
+}
