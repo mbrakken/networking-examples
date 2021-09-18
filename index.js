@@ -98,8 +98,8 @@ process.on('exit', () => {
   console.log('\nShutting down');
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\nServer listening at http://127.0.0.1:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`\nServer listening on ${PORT}`);
 });
 
 function handleGET(request, response) {
