@@ -1,6 +1,7 @@
 import { $ } from './modules/utilities.js';
 
 let socket;
+const localhosts = ['localhost', '127.0.0.1'];
 
 const connectButton = $('connectSocket');
 const input =  $('entry');
@@ -18,8 +19,8 @@ form.addEventListener('submit', (evt) => {
 
 function connectSocket() {
   connectButton.setAttribute('disabled', true);
-
-  socket = new WebSocket('ws://127.0.0.1:8765');
+  const host = window.location.origin.replace(/^http/, 'ws');
+  socket = new WebSocket(host);
 
   socket.onconnect = function(evt) {
     console.log('connect', evt);

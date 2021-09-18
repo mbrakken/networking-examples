@@ -13,8 +13,6 @@ const redisURL = process.env.REDISTOGO_URL || 'redis://localhost:6379';
 
 const publicPath = path.resolve(__dirname, 'public');
 
-console.log(process.env);
-
 const server = http.createServer((request, response) => {
   console.log('Request:', request.method, request.url);
 
