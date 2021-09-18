@@ -3,16 +3,17 @@ const { promises: fs, createReadStream } = require('fs');
 const path = require('path');
 const { WebSocketServer } = require('ws');
 const redis = require('redis');
-// const redisClient = require('./utilities/redisClient');
 
 const mimeTypes = require('./utilities/mimeTypes');
 const queryStringToObject = require('./utilities/queryStringToObject');
 const findAnagrams = require('./utilities/findAnagrams');
 
 const PORT = process.env.PORT || 8765;
-const redisURL = process.env.REDISTOGO_URL || "redis://localhost:6379"
+const redisURL = process.env.REDISTOGO_URL || 'redis://localhost:6379';
 
 const publicPath = path.resolve(__dirname, 'public');
+
+console.log(process.env);
 
 const server = http.createServer((request, response) => {
   console.log('Request:', request.method, request.url);
@@ -37,11 +38,6 @@ const server = http.createServer((request, response) => {
       break;
     }
   }
-});
-
-server.on('error', (err) => {
-  console.error(`Server error: ${err.stack}`);
-  process.exit(1);
 });
 
 server.on('clientError', (err, socket) => {
@@ -69,34 +65,33 @@ server.on('connection', () => {
   console.log('got a connection...');
 });
 
-// https://github.com/websockets/ws
-// server.on('upgrade', upgradeListener);
+// process.on('uncaughtException', (e) => {
+//   console.error('\nuncaughtException, SHUTTING DOWN');
+//   console.error(e);
+//   server.close(() => {
+//     console.log('\nSERVER SHUT DOWN FROM UNCAUGHT EXCEPTION');
+//     process.exit(1);
+//   });
+// });
 
-process.on('uncaughtException', (e) => {
-  console.error('\nuncaughtException, SHUTTING DOWN');
+process.on('uncaughtExceptionMonitor', (e, origin) => {
+  console.error(`\nuncaughtException from ${origin}, SHUTTING DOWN`);
   console.error(e);
-  server.close(() => {
-    console.log('\nSERVER SHUT DOWN FROM UNCAUGHT EXCEPTION');
-    process.exit(0);
-  });
 });
 
 process.on('unhandledRejection', (e) => {
   console.error('\nunhandledRejection, SHUTTING DOWN');
   console.error(e);
-  server.close(() => {
-    console.log('\nSERVER SHUT DOWN FROM UNHANDLED REJECTION');
-    process.exit(0);
-  });
+  process.exit(1);
 });
 
 process.on('SIGTERM', () => {
-  console.log('\nShutting down');
+  console.log('\nSIGTERM, Shutting down');
 });
 
 process.on('SIGINT', () => {
   console.log('\nForce-closing all open sockets...');
-  process.exit(0);
+  process.exit(1);
 });
 
 process.on('exit', () => {
@@ -217,14 +212,12 @@ function parseMessage(aMessage) {
   };
 }
 
-// redisClient
-// https://github.com/NodeRedis/node-redis/tree/v3.1.2
 wss.on('connection', function connection(ws) {
   // console.log('Got a connection', ws);
 
-  const publisher = redis.createClient({ url: redisURL});
+  const publisher = redis.createClient({ url: redisURL });
   const subscriber = redis.createClient({ url: redisURL });
-  const subcriptions = [];
+  // const subcriptions = [];
 
   let yourName;
 
