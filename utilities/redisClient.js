@@ -1,8 +1,17 @@
 const { createClient } = require('redis');
 
-const redisURL = process.env.REDIS_TLS_URL ||  process.env.REDIS_URL || 'redis://localhost:6379';
+const redisURL =
+  process.env.REDIS_TLS_URL ||
+  process.env.REDIS_URL ||
+  'redis://localhost:6379';
 
-const client = createClient({ url: redisURL });
+const client = createClient({
+  url: redisURL,
+  socket: {
+    tls: true,
+    rejectUnauthorized: false,
+  },
+});
 
 client.on('error', (err) => console.log('Redis Client Error', err));
 
