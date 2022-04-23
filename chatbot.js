@@ -106,7 +106,7 @@ class ChatBot {
     await this[list].get(channel).subscribe(socket);
   }
 
-  removeSubscriber(channel, socket) {
+  async removeSubscriber(channel, socket) {
     if (!this[list].has(channel)) {
       throw new Error('Channel does not exist');
     }
