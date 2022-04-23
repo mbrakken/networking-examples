@@ -12,12 +12,12 @@ class Channel {
     this[subscriberClient] = subClient;
   }
 
-  async subscribe(socket) {
+  subscribe(socket) {
     this[subscribersSym].add(socket);
   }
 
-  async unsubscribe(socket) {
-    this[subscribersSym].remove(socket);
+  unsubscribe(socket) {
+    this[subscribersSym].delete(socket);
   }
 
   get subscribers() {
@@ -116,8 +116,8 @@ class ChatBot {
     await this[list].get(channel).unsubscribe(socket);
   }
 
-  burnDown(socket) {
-    this.channels.forEach(channel => {
+  hangUp(socket) {
+    this[list].forEach((channel) => {
       channel.unsubscribe(socket);
     });
   }

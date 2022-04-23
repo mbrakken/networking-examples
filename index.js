@@ -192,7 +192,7 @@ async function init() {
 
     socket.on('close', (code) => {
       console.log('Socket closed with code', code);
-      chatBot.burnDown(socket);
+      chatBot.hangUp(socket);
     });
 
     socket.send(`
