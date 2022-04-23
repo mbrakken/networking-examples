@@ -1,7 +1,6 @@
-const redis = require('redis');
+const { createClient } = require('redis');
 
 const redisURL = process.env.REDISTOGO_URL || "redis://localhost:6379"
-
-const client = redis.createClient();
+const client = createClient(redisURL);
 
 module.exports = client;
