@@ -5,13 +5,18 @@ const redisURL =
   process.env.REDIS_URL ||
   'redis://localhost:6379';
 
-const client = createClient({
+const redisConfig = {
   url: redisURL,
-  socket: {
+};
+
+if (/^rediss:/.test(redisURL)) {
+  redisConfig.socket = {
     tls: true,
     rejectUnauthorized: false,
-  },
-});
+  };
+}
+
+const client = createClient(redisConfig);
 
 client.on('error', (err) => console.log('Redis Client Error', err));
 
