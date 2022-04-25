@@ -11,6 +11,14 @@ const serveFile = require('./lib/serveFile.js');
 
 const PORT = process.env.PORT || 8765;
 
+const welcomeMessage = `
+Welcome to to Chatbort!
+To get started, here are some commands you can send: 
+/name Chatbort
+/subscribe Puppytime
+/create Kittentime
+`;
+
 process.on('uncaughtExceptionMonitor', (e, origin) => {
   console.error(`\nuncaughtException from ${origin}, SHUTTING DOWN`);
   console.error(e);
@@ -145,47 +153,60 @@ async function init() {
     let yourName;
 
     socket.on('message', async function incoming(incomingMessage) {
+      // move all this into ChatBot?
       console.log('received: %s', incomingMessage);
 
-      const { command, message } = parseMessage(incomingMessage);
+      const {
+        command,
+        message,
+        channel = 'general',
+        time = Date.now(),
+      } = parseMessage(incomingMessage);
 
       switch (command) {
-        case '/name': {
+        case 'name': {
           const previousName = yourName;
           yourName = message;
 
           if (!previousName) {
             await chatBot.addSubscriber('general', socket);
-            chatBot.postMessage(`${yourName} has joined the chatbort.`);
+            chatBot.postMessage({
+              message: `"${yourName}" has joined the chatbort.`,
+              time,
+            });
           } else {
-            chatBot.postMessage(`${previousName} is now "${yourName}".`);
+            chatBot.postMessage({
+              message: `"${previousName}" is now "${yourName}".`,
+              time,
+            });
           }
           break;
         }
 
-        case '/subscribe':
+        case 'subscribe':
           await chatBot.addSubscriber(message, socket);
-          socket.send(
-            `You would have subscribed to the ${message} channel if channels worked!`
-          );
+          chatBot.sendMessage(socket, {
+            message: `You would have subscribed to the "${message}" channel if channels worked!`,
+          });
           break;
 
-        case '/create':
+        case 'create':
           await chatBot.addChannel(message, socket);
 
-          socket.send(
-            `You would have created the "${message}" channel if that adding channels worked. Tell your friends!`
-          );
+          chatBot.sendMessage(socket, {
+            message: `You would have created the "${message}" channel if that adding channels worked. Tell your friends!`,
+          });
           break;
 
         case null:
         case undefined:
-          // add interface for channel name
-          chatBot.postMessage(incomingMessage.toString(), yourName);
+          chatBot.postMessage({ channel, message, time, sender: yourName });
           break;
 
         default:
-          socket.send(`We did not understand "${command}". Sorry!`);
+          chatBot.sendMessage(socket, {
+            message: `I did not understand "/${command}". Sorry!`,
+          });
           break;
       }
     });
@@ -195,13 +216,10 @@ async function init() {
       chatBot.hangUp(socket);
     });
 
-    socket.send(`
-      Welcome to to Chatbort!
-      To get started, here are some commands you can send: 
-      /name Chatbort
-      /subscribe Puppytime
-      /create Kittentime
-    `);
+    chatBot.sendMessage(socket, {
+      command: 'welcome',
+      message: welcomeMessage,
+    });
 
     // process.on('uncaughtException', (e) => {
     //   console.error('\nuncaughtException, SHUTTING DOWN');
@@ -219,20 +237,12 @@ function parseMessage(aMessage) {
     return {};
   }
 
-  console.log('Parse incoming message:', aMessage);
-  const stringified = aMessage.toString();
-  console.log('stringified:', stringified);
-
-  if (stringified[0] !== '/') {
+  try {
+    return JSON.parse(aMessage);
+  } catch (e) {
+    console.warn('Error parsing message', e);
     return {};
   }
-
-  const [command, ...messageParts] = stringified.split(' ');
-
-  return {
-    command,
-    message: messageParts.join(' '),
-  };
 }
 
 init();

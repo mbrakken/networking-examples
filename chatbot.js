@@ -58,16 +58,15 @@ class ChatBot {
       '*',
       (publishedMessage, channelName) => {
         console.log(`${channelName} subscriber got message`, publishedMessage);
-        const { person, message } = JSON.parse(publishedMessage);
+        const parsedMessage = JSON.parse(publishedMessage);
 
         const subscribers = this.getChannel(channelName).subscribers;
+
         console.log(`Try sending to ${subscribers.size} subscribers`);
 
         for (let socket of subscribers) {
           try {
-            if (socket.readyState === WebSocket.OPEN) {
-              socket.send(`[ ${channelName} ] ${person}: ${message}`);
-            }
+            this.sendMessage(socket, parsedMessage);
           } catch (e) {
             console.error('Failed to send message', e);
           }
@@ -82,7 +81,7 @@ class ChatBot {
     if (channels.has(channelName)) {
       console.warn(`Channel "${channelName}" already exists`);
     } else {
-      console.log('Add channel', channelName);
+      console.log(`Add channel "${channelName}"`);
       const channel = new Channel(channelName, this[subscriberClient]);
       channels.set(channelName, channel);
     }
@@ -122,15 +121,36 @@ class ChatBot {
     });
   }
 
-  postMessage(message, person = 'ChatBort', channel = 'general') {
+  postMessage({
+    message,
+    sender = 'ChatBort',
+    channel = 'general',
+    time = Date.now(),
+  }) {
     console.log('POST MESSAGE TO', channel);
     this[publisherClient].publish(
       channel,
       JSON.stringify({
-        person,
+        sender,
         message: message.toString(),
+        time,
       })
     );
+  }
+
+  sendMessage(
+    socket,
+    {
+      message,
+      sender = 'ChatBort',
+      time = Date.now(),
+      channel = 'general',
+      ...rest
+    }
+  ) {
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ message, sender, time, channel, ...rest }));
+    }
   }
 
   get channels() {

@@ -2,7 +2,7 @@ import { $ } from './modules/utilities.js';
 
 let socket;
 let currentName = '';
-const localhosts = ['localhost', '127.0.0.1'];
+// const localhosts = ['localhost', '127.0.0.1'];
 
 const connectButton = $('connectSocket');
 const input = $('entry');
@@ -14,36 +14,88 @@ connectButton.addEventListener('click', function connectSocket() {
   const host = window.location.origin.replace(/^http/, 'ws');
   socket = new WebSocket(host);
 
-  socket.onconnect = function (evt) {
-    console.log('connect', evt);
-    if (currentName) {
-      socket.send(`/name ${currentName}`);
-    }
-  };
+  socket.addEventListener('open', function (evt) {
+    console.log('open', evt);
 
-  socket.onclose = function (evt) {
+    if (currentName) {
+      socket.send(
+        JSON.stringify({
+          command: 'name',
+          message: currentName,
+          time: Date.now(),
+        })
+      );
+    }
+  });
+
+  socket.addEventListener('close', function (evt) {
     console.log('close', evt);
 
     connectButton.removeAttribute('disabled');
+
     output.innerHTML +=
       'You have been disconnected from the server...' + '<br />';
-  };
+  });
 
-  socket.onmessage = function (evt) {
+  socket.addEventListener('message', function (evt) {
     console.log('message', evt);
-    output.innerHTML += evt.data + '<br />';
-  };
+    const data = JSON.parse(evt.data);
+    let messageHtml = `${data.message}<br />`;
+    if (data.command !== 'welcome') {
+      messageHtml = `[ ${data.channel} ] <b>${
+        data.sender
+      }:</b> ${messageHtml}<i>${new Date(
+        data.time
+      ).toLocaleString()}</i><br />`;
+    }
+    output.innerHTML += messageHtml;
+  });
+
+  socket.addEventListener('error', function (evt) {
+    console.log('error', evt);
+  });
 });
 
-const nameRX = /^\/name\w/;
+function parseMessage(aMessage) {
+  if (!aMessage) {
+    return {
+      message: aMessage,
+    };
+  }
+
+  const stringified = aMessage.toString();
+
+  if (stringified[0] !== '/') {
+    return {
+      message: aMessage,
+    };
+  }
+
+  const [command, ...messageParts] = stringified.split(' ');
+
+  return {
+    command: command.slice(1),
+    message: messageParts.join(' '),
+  };
+}
 
 form.addEventListener('submit', (evt) => {
   evt.preventDefault();
   const { value } = input;
-  if (nameRX.test(value)) {
-    currentName = value.replace(nameRX, '').trim();
-  }
 
-  socket.send(value);
+  const messageParts = parseMessage(value);
+
+  if (messageParts.command === 'name') {
+    currentName = messageParts.message;
+  }
+  
+
+  socket.send(
+    JSON.stringify({
+      ...messageParts,
+      time: Date.now(),
+    })
+  );
+
   input.value = '';
 });
